@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Aura Task — Organize suas tarefas</title>
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- Supabase Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  
+  <script src="index.js" defer></script>
+</head>
+<body>
+
+  <!-- TELA DE LOGIN -->
+  <div id="loginScreen" class="login-screen">
+    <div class="login-side-form">
+      <div class="login-box">
+        
+        <div class="brand-container">
+          <img src="logo1.png" alt="Aura Task Logo" class="app-logo">
+          <h2 id="loginTitle">Faça login</h2>
+          <p id="loginSubtitle" class="app-subtitle">Crie, edite e organize suas tarefas de forma simples.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="loginUser">Email</label>
+          <input id="loginUser" type="email" placeholder="seu@email.com">
+        </div>
+
+        <div class="form-group">
+          <label for="loginPass">Senha</label>
+          <input id="loginPass" type="password" placeholder="Digite sua senha">
+        </div>
+        
+        <button id="loginBtn" class="btn-primary">Entrar</button>
+
+        <p class="switch-form">
+          <span id="switchText">Não tem uma conta?</span>
+          <a href="#" id="toggleLogin">Cadastre-se</a>
+        </p>
+        <p id="loginError" style="color: #ef4444; font-size: 0.85rem; margin-top: 10px;"></p>
+      </div>
+    </div>
+
+    <div class="login-side-promo">
+      <div class="promo-content">
+        <img src="frente.jpg" alt="Organização" class="promo-img">
+        <h3>Organize seu dia. Eleve sua produtividade.</h3>
+        <p>Mantenha sua rotina organizada em qualquer lugar, a qualquer hora.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP PRINCIPAL -->
+  <div id="appWrapper" class="app-container" style="display: none;">
+    
+    <!-- SIDEBAR LATERAL -->
+    <aside class="sidebar">
+      <!-- Header da Sidebar -->
+      <div class="sidebar-header">
+        <div class="user-avatar">U</div>
+        <div class="user-info">
+          <strong id="userDisplayName">Usuário</strong>
+        </div>
+        <button id="logoutBtn" class="logout-icon" title="Sair">🚪</button>
+      </div>
+
+      <!-- Botão Adicionar Tarefa -->
+      <button class="add-task-sidebar" id="addTaskSidebarBtn">
+        ➕ Adicionar tarefa
+      </button>
+
+      <!-- Menu de Navegação -->
+      <nav class="nav-menu">
+        <div class="nav-item active" data-view="today">
+          <span class="nav-icon">📅</span>
+          <span>Hoje</span>
+          <span class="task-count" id="todayCount">0</span>
+        </div>
+        
+        <div class="nav-item" data-view="inbox">
+          <span class="nav-icon">📥</span>
+          <span>Entrada</span>
+        </div>
+
+        <div class="nav-item" data-view="nodate">
+          <span class="nav-icon">📋</span>
+          <span>Sem data</span>
+        </div>
+
+        <div class="nav-item" data-view="completed">
+          <span class="nav-icon">✅</span>
+          <span>Concluído</span>
+        </div>
+      </nav>
+
+      <!-- Meus Projetos -->
+      <div class="projects-section">
+        <div class="section-header">
+          <span>Meus projetos</span>
+        </div>
+        <!-- Projetos serão inseridos dinamicamente aqui -->
+      </div>
+
+      <!-- Footer da Sidebar -->
+      <div class="sidebar-footer">
+        <button id="exportBtn" class="sidebar-btn">
+          📤 Exportar
+        </button>
+        <button id="importBtn" class="sidebar-btn">
+          📥 Importar
+        </button>
+        <input id="fileInput" type="file" accept="application/json" style="display:none">
+      </div>
+    </aside>
+
+    <!-- CONTEÚDO PRINCIPAL -->
+    <main class="main-content">
+      <!-- Header do Conteúdo -->
+      <header class="content-header">
+        <div class="header-left">
+          <h1 id="pageTitle">Hoje</h1>
+          <p class="page-subtitle" id="pageSubtitle">
+            <span id="taskCountText">0 tarefas</span>
+          </p>
+        </div>
+        
+        <div id="lateBadge" class="late-notification" style="display: none;">
+          <span class="alarm-icon">🚨</span>
+          <span id="lateCount">0</span> tarefas atrasadas
+        </div>
+      </header>
+
+      <!-- Área de Input de Tarefa -->
+      <section class="task-input-section">
+        <div class="quick-add-task">
+          <input id="taskInput" type="text" placeholder="O que você precisa fazer?">
+          <div class="task-options">
+            <input id="dateInput" type="date" class="date-picker">
+            <select id="prioritySelect" class="priority-select">
+              <option value="2">Normal</option>
+              <option value="3">⚡ Alta</option>
+              <option value="1">Baixa</option>
+            </select>
+            <input id="categoryInput" type="text" placeholder="Projeto/Categoria" class="category-input">
+            <button id="addBtn" class="btn-add-task">Adicionar</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filtros e Busca -->
+      <section class="filters-section">
+        <div class="filter-chips">
+          <div id="filterAll" class="chip active" data-filter="all">Todas</div>
+          <div id="filterActive" class="chip" data-filter="active">Ativas</div>
+          <div id="filterCompleted" class="chip" data-filter="completed">Concluídas</div>
+        </div>
+        
+        <div class="filter-right">
+          <input id="search" type="text" placeholder="Pesquisar..." class="search-input">
+          <select id="sortSelect" class="sort-select">
+            <option value="created_desc">Mais recentes</option>
+            <option value="priority_desc">Prioridade alta</option>
+          </select>
+        </div>
+      </section>
+
+      <!-- Lista de Tarefas -->
+      <section class="tasks-list" id="list">
+        <div class="loading">Carregando tarefas...</div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL DE EDIÇÃO -->
+  <div id="editModal" class="modal" style="display: none;">
+    <div class="modal-content">
+      <h3>Editar Tarefa</h3>
+      <input type="hidden" id="editTaskId">
+      
+      <label>Nome da Tarefa</label>
+      <input type="text" id="editTaskText">
+      
+      <label>Data</label>
+      <input type="date" id="editTaskDate">
+      
+      <label>Categoria</label>
+      <input type="text" id="editTaskCategory">
+      
+      <label>Prioridade</label>
+      <select id="editTaskPriority">
+        <option value="1">Baixa</option>
+        <option value="2">Normal</option>
+        <option value="3">Alta</option>
+      </select>
+      
+      <div class="modal-actions">
+        <button onclick="closeEditModal()" class="btn-cancel">Cancelar</button>
+        <button onclick="saveEditModal()" class="btn-save">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="toast-container"></div>
+
+</body>
+</html>
