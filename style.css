@@ -350,6 +350,12 @@ html, body {
   background: white;
   overflow-y: auto;
   padding: 40px 60px;
+  position: relative;
+}
+
+/* Botão menu mobile (escondido por padrão) */
+.mobile-menu-btn {
+  display: none;
 }
 
 .content-header {
@@ -720,6 +726,8 @@ html, body {
 }
 
 /* ========== RESPONSIVE ========== */
+
+/* Tablets */
 @media (max-width: 900px) {
   .login-side-promo {
     display: none;
@@ -736,13 +744,205 @@ html, body {
   .filters-section {
     flex-direction: column;
     align-items: flex-start;
+    gap: 10px;
   }
 
   .filter-right {
     width: 100%;
+    flex-direction: column;
   }
 
   .search-input {
     flex: 1;
+    width: 100%;
+  }
+
+  .sort-select {
+    width: 100%;
+  }
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+  /* Esconde sidebar por padrão no mobile */
+  .sidebar {
+    position: fixed;
+    left: -100%;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    z-index: 1000;
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  /* Botão menu hamburguer */
+  .mobile-menu-btn {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 999;
+  }
+
+  /* Overlay para fechar sidebar */
+  .sidebar-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 999;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+  }
+
+  /* Conteúdo principal ocupa tela toda */
+  .main-content {
+    width: 100%;
+    padding: 70px 15px 20px 15px;
+  }
+
+  .content-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .header-left h1 {
+    font-size: 1.5rem;
+  }
+
+  /* Input de tarefa */
+  .task-input-section {
+    margin-bottom: 20px;
+  }
+
+  .quick-add-task {
+    padding: 12px;
+  }
+
+  .task-options {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .date-picker,
+  .priority-select,
+  .category-input,
+  .btn-add-task {
+    width: 100%;
+  }
+
+  /* Filtros */
+  .filters-section {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .filter-chips {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 5px;
+  }
+
+  .filter-right {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .search-input,
+  .sort-select {
+    width: 100%;
+  }
+
+  /* Tarefas */
+  .task {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .task-left {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+
+  .task-content {
+    width: 100%;
+    margin-left: 0 !important;
+  }
+
+  .task-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 10px;
+    opacity: 1 !important;
+  }
+
+  /* Modal */
+  .modal-content {
+    width: 95%;
+    max-width: 100%;
+    margin: 0 10px;
+  }
+
+  /* Login */
+  .login-box {
+    max-width: 100%;
+  }
+
+  .app-logo {
+    width: 250px;
+  }
+
+  /* Late notification */
+  .late-notification {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+}
+
+/* Pequenos ajustes para telas muito pequenas */
+@media (max-width: 480px) {
+  .main-content {
+    padding: 60px 10px 15px 10px;
+  }
+
+  .header-left h1 {
+    font-size: 1.3rem;
+  }
+
+  .task-meta {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .chip {
+    font-size: 0.8rem;
+    padding: 5px 12px;
+  }
+
+  .app-logo {
+    width: 200px;
   }
 }

@@ -2,8 +2,7 @@
 const SUPABASE_URL = 'https://jmddfsvfrwjxshkxzbun.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZGRmc3ZmcndqeHNoa3h6YnVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MzgyNjksImV4cCI6MjA4NDUxNDI2OX0.Aukxmn4O20Q6NQpF7QzAYRM4H2Whk4nCGNPNweA7VzM';
 
-const { createClient } = supabase;
-const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 document.addEventListener('DOMContentLoaded', async () => {
     const toastContainer = document.querySelector('#toastContainer');
@@ -66,7 +65,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ===== VERIFICAR SESSÃO =====
     async function checkSession() {
-        const { data: { session } } = await supabaseClient.auth.getSession();
+        const { data: { session } } = await supabase.auth.getSession();
         
         if (session) {
             currentUser = session.user;
@@ -111,7 +110,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     return;
                 }
 
-                const { data, error } = await supabaseClient.auth.signUp({
+                const { data, error } = await supabase.auth.signUp({
                     email: email,
                     password: password,
                 });
@@ -128,7 +127,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 loginPass.value = '';
             } else {
                 // LOGIN
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
@@ -148,7 +147,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     // ===== LOGOUT =====
     if (logoutBtn) {
         logoutBtn.onclick = async () => {
-            await supabaseClient.auth.signOut();
+            await supabase.auth.signOut();
             currentUser = null;
             tasks = [];
             location.reload();
@@ -157,7 +156,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // ===== CARREGAR TAREFAS =====
     async function loadTasks() {
-        const { data, error } = await supabaseClient
+        const { data, error } = await supabase
             .from('tasks')
             .select('*')
             .order('created_at', { ascending: false });
@@ -190,7 +189,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const taskDate = (currentView === 'nodate') ? null : (dateInput.value || null);
 
-            const { data, error } = await supabaseClient
+            const { data, error } = await supabase
                 .from('tasks')
                 .insert([{
                     text: text,
@@ -231,7 +230,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const task = tasks.find(t => t.id === id);
         if (!task) return;
 
-        const { error } = await supabaseClient
+        const { error } = await supabase
             .from('tasks')
             .update({ completed: !task.completed })
             .eq('id', id);
@@ -250,7 +249,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function deleteTask(id) {
         if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
 
-        const { error } = await supabaseClient
+        const { error } = await supabase
             .from('tasks')
             .delete()
             .eq('id', id);
@@ -292,7 +291,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const { error } = await supabaseClient
+        const { error } = await supabase
             .from('tasks')
             .update({
                 text: text,
@@ -559,6 +558,33 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (sortSelect) sortSelect.onchange = render;
     if (searchInput) searchInput.oninput = render;
+
+    // ===== MENU MOBILE =====
+    const mobileMenuBtn = document.querySelector('#mobileMenuBtn');
+    const sidebar = document.querySelector('#sidebar');
+    const sidebarOverlay = document.querySelector('#sidebarOverlay');
+
+    if (mobileMenuBtn && sidebar && sidebarOverlay) {
+        // Abre sidebar
+        mobileMenuBtn.addEventListener('click', () => {
+            sidebar.classList.add('active');
+            sidebarOverlay.classList.add('active');
+        });
+
+        // Fecha sidebar ao clicar no overlay
+        sidebarOverlay.addEventListener('click', () => {
+            sidebar.classList.remove('active');
+            sidebarOverlay.classList.remove('active');
+        });
+
+        // Fecha sidebar ao clicar em qualquer item do menu
+        sidebar.addEventListener('click', (e) => {
+            if (e.target.closest('.nav-item') || e.target.closest('.add-task-sidebar')) {
+                sidebar.classList.remove('active');
+                sidebarOverlay.classList.remove('active');
+            }
+        });
+    }
 
     // Inicia verificando a sessão
     await checkSession();
