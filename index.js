@@ -1,6 +1,7 @@
 // ===== CONFIGURAÇÃO DO SUPABASE =====
-// Previne erro de redeclaração
-if (typeof supabase === 'undefined') {
+// Verificamos se o cliente já existe, se não, criamos usando o objeto global correto
+if (typeof supabase === 'undefined' || supabase === null) {
+    // A biblioteca CDN do Supabase expõe a função 'createClient' no objeto global 'supabase'
     var supabase = window.supabase.createClient(
         'https://jmddfsvfrwjxshkxzbun.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZGRmc3ZmcndqeHNoa3h6YnVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MzgyNjksImV4cCI6MjA4NDUxNDI2OX0.Aukxmn4O20Q6NQpF7QzAYRM4H2Whk4nCGNPNweA7VzM'
