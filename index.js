@@ -1,14 +1,9 @@
 // ===== CONFIGURAÇÃO DO SUPABASE =====
-// Verificamos se o cliente já existe, se não, criamos usando o objeto global correto
-if (typeof supabase === 'undefined' || supabase === null) {
-    // A biblioteca CDN do Supabase expõe a função 'createClient' no objeto global 'supabase'
-    var supabase = window.supabase.createClient(
-        'https://jmddfsvfrwjxshkxzbun.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZGRmc3ZmcndqeHNoa3h6YnVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MzgyNjksImV4cCI6MjA4NDUxNDI2OX0.Aukxmn4O20Q6NQpF7QzAYRM4H2Whk4nCGNPNweA7VzM'
-    );
-}
+const SUPABASE_URL = 'https://jmddfsvfrwjxshkxzbun.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImptZGRmc3ZmcndqeHNoa3h6YnVuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njg5MzgyNjksImV4cCI6MjA4NDUxNDI2OX0.Aukxmn4O20Q6NQpF7QzAYRM4H2Whk4nCGNPNweA7VzM';
 
 // ===== VARIÁVEIS GLOBAIS =====
+let supabaseClient; // MUDEI O NOME AQUI
 let isLoginMode = true;
 let currentUser = null;
 let currentView = 'today';
@@ -18,6 +13,19 @@ let tasks = [];
 // ===== AGUARDA O DOM ESTAR PRONTO =====
 window.addEventListener('DOMContentLoaded', async function() {
     console.log('🚀 Aplicação iniciada!');
+    
+    // Aguarda um pouco para garantir que Supabase carregou
+    await new Promise(resolve => setTimeout(resolve, 200));
+    
+    // Inicializa o Supabase
+    if (typeof window.supabase === 'undefined') {
+        console.error('❌ Supabase library não carregou!');
+        alert('ERRO: Biblioteca Supabase não carregou. Verifique sua conexão com a internet.');
+        return;
+    }
+    
+    supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    console.log('✅ Supabase inicializado:', supabaseClient);
     
     const toastContainer = document.getElementById('toastContainer');
 
@@ -49,11 +57,16 @@ window.addEventListener('DOMContentLoaded', async function() {
     const switchText = document.getElementById('switchText');
 
     console.log('✅ Elementos DOM carregados');
+    console.log('loginBtn encontrado?', !!loginBtn);
+    console.log('loginUser encontrado?', !!loginUser);
+    console.log('loginPass encontrado?', !!loginPass);
 
     // ===== TOGGLE LOGIN/CADASTRO =====
     if (toggleLogin) {
         toggleLogin.addEventListener('click', function(e) {
             e.preventDefault();
+            console.log('Toggle clicado! isLoginMode:', isLoginMode);
+            
             isLoginMode = !isLoginMode;
             
             if (loginError) loginError.textContent = '';
@@ -76,15 +89,21 @@ window.addEventListener('DOMContentLoaded', async function() {
 
     // ===== VERIFICAR SESSÃO =====
     async function checkSession() {
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (session) {
-            currentUser = session.user;
-            updateUserDisplay();
-            loginScreen.style.display = 'none';
-            appWrapper.style.display = 'flex';
-            await loadTasks();
-        } else {
+        try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            
+            if (session) {
+                currentUser = session.user;
+                updateUserDisplay();
+                loginScreen.style.display = 'none';
+                appWrapper.style.display = 'flex';
+                await loadTasks();
+            } else {
+                loginScreen.style.display = 'flex';
+                appWrapper.style.display = 'none';
+            }
+        } catch (error) {
+            console.error('Erro ao verificar sessão:', error);
             loginScreen.style.display = 'flex';
             appWrapper.style.display = 'none';
         }
@@ -107,11 +126,16 @@ window.addEventListener('DOMContentLoaded', async function() {
     if (loginBtn) {
         loginBtn.addEventListener('click', async function(e) {
             e.preventDefault();
+            console.log('🔘 Botão de login clicado!');
             
             const email = loginUser.value.trim();
             const password = loginPass.value.trim();
             
+            console.log('Email:', email);
+            console.log('Senha length:', password.length);
+            
             if (!email || !password) {
+                console.log('❌ Campos vazios');
                 if (loginError) loginError.textContent = 'Preencha todos os campos';
                 showToast('Preencha todos os campos', 'error');
                 return;
@@ -120,29 +144,42 @@ window.addEventListener('DOMContentLoaded', async function() {
             loginBtn.disabled = true;
             const originalText = loginBtn.textContent;
             loginBtn.textContent = 'Aguarde...';
+            console.log('⏳ Processando...');
 
             try {
                 if (!isLoginMode) {
                     // CADASTRO
+                    console.log('📝 Modo: CADASTRO');
+                    
                     if (password.length < 6) {
+                        console.log('❌ Senha muito curta');
                         if (loginError) loginError.textContent = 'Senha deve ter no mínimo 6 caracteres';
                         showToast('Senha deve ter no mínimo 6 caracteres', 'error');
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = originalText;
                         return;
                     }
 
-                    const { data, error } = await supabase.auth.signUp({
+                    const { data, error } = await supabaseClient.auth.signUp({
                         email: email,
                         password: password,
                     });
 
+                    console.log('Resposta signUp:', { data, error });
+
                     if (error) {
+                        console.log('❌ Erro no cadastro:', error);
                         if (loginError) loginError.textContent = error.message;
                         showToast('Erro ao criar conta: ' + error.message, 'error');
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = originalText;
                         return;
                     }
 
+                    console.log('✅ Cadastro realizado!');
                     showToast('Conta criada! Verifique seu email para confirmar.', 'success');
                     
+                    // Volta para modo login
                     isLoginMode = true;
                     loginTitle.textContent = 'Faça login';
                     loginSubtitle.textContent = 'Organize suas tarefas de forma simples e eficaz.';
@@ -155,30 +192,50 @@ window.addEventListener('DOMContentLoaded', async function() {
                     
                 } else {
                     // LOGIN
-                    const { data, error } = await supabase.auth.signInWithPassword({
+                    console.log('🔑 Modo: LOGIN');
+                    
+                    const { data, error } = await supabaseClient.auth.signInWithPassword({
                         email: email,
                         password: password,
                     });
 
+                    console.log('Resposta signIn:', { data, error });
+
                     if (error) {
+                        console.log('❌ Erro no login:', error);
                         if (loginError) loginError.textContent = 'Email ou senha inválidos';
                         showToast('Email ou senha inválidos', 'error');
+                        loginBtn.disabled = false;
+                        loginBtn.textContent = originalText;
                         return;
                     }
 
+                    console.log('✅ Login realizado!');
                     currentUser = data.user;
                     showToast('Bem-vindo ao Aura Task!', 'success');
                     await checkSession();
                 }
             } catch (error) {
-                console.error('Erro:', error);
-                if (loginError) loginError.textContent = 'Erro ao processar requisição';
-                showToast('Erro ao processar requisição', 'error');
+                console.error('❌ Erro completo:', error);
+                const errorMessage = error.message || 'Erro ao processar requisição';
+                if (loginError) loginError.textContent = errorMessage;
+                showToast(errorMessage, 'error');
+                
+                console.log('Detalhes do erro:', {
+                    message: error.message,
+                    name: error.name,
+                    stack: error.stack
+                });
             } finally {
                 loginBtn.disabled = false;
                 loginBtn.textContent = originalText;
+                console.log('🔓 Botão liberado novamente');
             }
         });
+        
+        console.log('✅ Event listener do login adicionado');
+    } else {
+        console.error('❌ Botão de login NÃO encontrado no DOM!');
     }
 
     // Enter para fazer login
@@ -187,6 +244,7 @@ window.addEventListener('DOMContentLoaded', async function() {
             input.addEventListener('keypress', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    console.log('⌨️ Enter pressionado');
                     loginBtn.click();
                 }
             });
@@ -197,7 +255,7 @@ window.addEventListener('DOMContentLoaded', async function() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async function(e) {
             e.preventDefault();
-            await supabase.auth.signOut();
+            await supabaseClient.auth.signOut();
             currentUser = null;
             tasks = [];
             location.reload();
@@ -206,7 +264,7 @@ window.addEventListener('DOMContentLoaded', async function() {
 
     // ===== CARREGAR TAREFAS =====
     async function loadTasks() {
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .from('tasks')
             .select('*')
             .order('created_at', { ascending: false });
@@ -241,7 +299,7 @@ window.addEventListener('DOMContentLoaded', async function() {
 
             const taskDate = (currentView === 'nodate') ? null : (dateInput.value || null);
 
-            const { data, error } = await supabase
+            const { data, error } = await supabaseClient
                 .from('tasks')
                 .insert([{
                     text: text,
@@ -288,7 +346,7 @@ window.addEventListener('DOMContentLoaded', async function() {
         const task = tasks.find(t => t.id === id);
         if (!task) return;
 
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('tasks')
             .update({ completed: !task.completed })
             .eq('id', id);
@@ -307,7 +365,7 @@ window.addEventListener('DOMContentLoaded', async function() {
     async function deleteTask(id) {
         if (!confirm('Tem certeza que deseja excluir esta tarefa?')) return;
 
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('tasks')
             .delete()
             .eq('id', id);
@@ -349,7 +407,7 @@ window.addEventListener('DOMContentLoaded', async function() {
             return;
         }
 
-        const { error } = await supabase
+        const { error } = await supabaseClient
             .from('tasks')
             .update({
                 text: text,
